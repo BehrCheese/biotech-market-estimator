@@ -1,0 +1,52 @@
+import streamlit as st
+import openai
+import requests
+from bs4 import BeautifulSoup
+
+# OpenAI API Key (Replace with your key)
+OPENAI_API_KEY = "your-api-key-here"
+openai.api_key = OPENAI_API_KEY
+
+# Function to get biotech market estimates
+def get_market_analysis(product_description):
+    response = openai.ChatCompletion.create(
+        model="gpt-4-turbo",
+        messages=[
+            {"role": "system", "content": "You are an expert in biotechnology market analysis."},
+            {"role": "user", "content": f"Estimate the market size, CAGR, and penetration at launch for: {product_description}"}
+        ],
+        temperature=0.7
+    )
+    return response["choices"][0]["message"]["content"]
+
+# Function to scrape recent biotech market news (Example: Statista)
+def scrape_market_data():
+    url = "https://www.statista.com/topics/biotechnology/"  # Change if needed
+    headers = {"User-Agent": "Mozilla/5.0"}
+    response = requests.get(url, headers=headers)
+
+    if response.status_code == 200:
+        soup = BeautifulSoup(response.text, "html.parser")
+        titles = [item.text for item in soup.find_all("h2")][:5]  # Extract article titles
+        return titles
+    else:
+        return ["Failed to fetch data. Try again later."]
+
+# Streamlit UI
+st.title("Biotech Market Estimator 💊")
+st.write("Enter a biotechnology product description, and we'll estimate the market size, CAGR, and potential penetration.")
+
+product_description = st.text_area("Product Description", placeholder="Describe your biotech product...")
+
+if st.button("Estimate Market Size"):
+    with st.spinner("Analyzing market data..."):
+        market_data = get_market_analysis(product_description)
+        st.success("Market Analysis Complete!")
+        st.write(market_data)
+
+if st.button("Get Market Research Insights"):
+    with st.spinner("Fetching latest market trends..."):
+        insights = scrape_market_data()
+        st.write("### Recent Biotech Market Trends:")
+        for insight in insights:
+            st.write(f"- {insight}")
